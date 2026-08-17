@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 type Task = {
   id: string;
@@ -10,16 +10,59 @@ type Task = {
 
 type Filter = "all" | "active" | "completed";
 
+const TASKS_STORAGE_KEY = "vibetasks.tasks.v1";
+
 const filters: { label: string; value: Filter }[] = [
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
   { label: "Completed", value: "completed" },
 ];
 
+function isTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null) return false;
+
+  const task = value as Record<string, unknown>;
+  return (
+    typeof task.id === "string" &&
+    typeof task.title === "string" &&
+    typeof task.completed === "boolean"
+  );
+}
+
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [hasLoadedTasks, setHasLoadedTasks] = useState(false);
   const [newTask, setNewTask] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+
+  useEffect(() => {
+    try {
+      const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+
+      if (savedTasks !== null) {
+        const parsedTasks: unknown = JSON.parse(savedTasks);
+        if (Array.isArray(parsedTasks) && parsedTasks.every(isTask)) {
+          // Storage is client-only, so hydrate state after the component mounts.
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setTasks(parsedTasks);
+        }
+      }
+    } catch {
+      // Keep the default empty list if storage is unavailable or invalid.
+    } finally {
+      setHasLoadedTasks(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedTasks) return;
+
+    try {
+      localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+    } catch {
+      // The app remains usable if storage is unavailable or full.
+    }
+  }, [hasLoadedTasks, tasks]);
 
   const visibleTasks = tasks.filter((task) => {
     if (filter === "active") return !task.completed;
