@@ -61,7 +61,7 @@ export default function Home() {
       <section className="w-full max-w-xl" aria-labelledby="page-title">
         <header className="mb-10">
           <p className="mb-2 text-sm font-medium tracking-widest text-violet-400 uppercase">
-            Stay in flow
+            Build in flow
           </p>
           <h1 id="page-title" className="text-4xl font-semibold tracking-tight">
             VibeTasks
